@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum AdFormat {
+  SINGLE_IMAGE
+  CAROUSEL
+  UNKNOWN
+}
+
+model Brand {
+  id                String       @id @default(cuid())
+  name              String
+  websiteUrl        String
+  profileCategory   String?
+  profilePosition   String?
+  profileTone       String?
+  profileAudience   String?
+  profileValueProps String?
+  profileVisual     String?
+  profileSummary    String?
+  competitors       Competitor[]
+  chatMessages      ChatMessage[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model Competitor {
+  id        String   @id @default(cuid())
+  brandId   String
+  name      String
+  ads       Ad[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+
+  @@unique([brandId, name])
+}
+
+model Ad {
+  id            String        @id @default(cuid())
+  competitorId  String
+  sourceAdId    String
+  sourceUrl     String?
+  adText        String?
+  headline      String?
+  pageName      String?
+  format        AdFormat      @default(UNKNOWN)
+  firstSeenAt   DateTime?
+  assets        AdAsset[]
+  analysis      AdAnalysis?
+  rawPayload    String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  competitor Competitor @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+
+  @@unique([competitorId, sourceAdId])
+}
+
+model AdAsset {
+  id        String   @id @default(cuid())
+  adId      String
+  imageUrl  String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  ad Ad @relation(fields: [adId], references: [id], onDelete: Cascade)
+}
+
+model AdAnalysis {
+  id               String   @id @default(cuid())
+  adId             String   @unique
+  hookLine         String?
+  cta              String?
+  messagingAngle   String?
+  visualStyle      String?
+  hasPeople        Boolean?
+  hasTextOverlay   Boolean?
+  productionStyle  String?
+  productVisibility String?
+  creativeCategory String?
+  summary          String?
+  rawJson          String?
+  analyzedAt       DateTime @default(now())
+
+  ad Ad @relation(fields: [adId], references: [id], onDelete: Cascade)
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  brandId   String
+  role      String
+  content   String
+  createdAt DateTime @default(now())
+
+  brand Brand @relation(fields: [brandId], references: [id], onDelete: Cascade)
+}
